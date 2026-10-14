@@ -1,12 +1,12 @@
-import { auth } from "@/app/lib/auth"
+import Hero from "@/components/Hero"
+import Posts from "@/components/Posts"
 
-import { redirect } from "next/navigation"
+export default function HomePage() {
+    return(
+        <main id="main">
+            <Hero />
+            <Posts />
+        </main>
+    )
 
-const HomePage = async () => {
-
-
-        return (
-            <div>page</div>
-        )
 }
-export default HomePage

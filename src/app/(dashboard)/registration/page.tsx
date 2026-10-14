@@ -30,7 +30,7 @@ export default function SignupPage() {
     const [state, formAction, loading] = useActionState(signup, initialState);
 
     return (
-        <main className="flex h-screen overflow-y-auto isolate p-4 sm:p-6">
+        <main className="flex h-dvh overflow-y-auto isolate p-4 sm:p-6">
             <WavyBackground />
 
             <Card className="m-auto w-full max-w-md bg-transparent">
