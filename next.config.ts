@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
   partialPrefetching: true,
   reactCompiler: true,
   turbopack: {
+    // pin the root to this project: a stray package-lock.json in the home folder made
+    // Turbopack watch the whole home folder, rebuilding and reloading pages nonstop
+    root: __dirname,
     rules: {
       "*.css": {
         loaders: ["@tailwindcss/turbopack"],

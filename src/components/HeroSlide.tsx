@@ -1,19 +1,18 @@
 import Image from 'next/image'
-import { heroSlides } from '@/app/data/data'
-
-type Slide = (typeof heroSlides)[number]
+import type { HeroPost } from '@/lib/hero'
 
 // one hero slide: photo, dark fade, title and brief.
 // used by the carousel and by the still first slide shown while the carousel loads
-export default function HeroSlide({ slide, first }: { slide: Slide; first: boolean }) {
+export default function HeroSlide({ slide, first }: { slide: HeroPost; first: boolean }) {
     return (
         <div className="relative h-[60vh] min-h-80 max-h-[600px] w-full">
             <Image
-                src={slide.bgImg}
+                src={slide.image}
                 alt=""
                 fill
                 sizes="(max-width: 1280px) 100vw, 1280px"
-                placeholder="blur"
+                // imported pictures come with a blurred preview; plain web addresses don't
+                placeholder={typeof slide.image === 'string' ? 'empty' : 'blur'}
                 loading={first ? 'eager' : 'lazy'}
                 fetchPriority={first ? 'high' : 'auto'}
                 className="object-cover"

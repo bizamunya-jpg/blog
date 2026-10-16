@@ -3,6 +3,15 @@ import postSlide2 from '@/pictures/post-slide-2.jpg';
 import postSlide3 from '@/pictures/post-slide-3.jpg';
 import postSlide4 from '@/pictures/post-slide-4.jpg';
 
+// pictures in src/pictures, by the name a post's image is saved under in the database.
+// next/image can't load src/ files by a text path, so posts point here instead.
+export const localPictures = {
+  'pictures/post-slide-1.jpg': postSlide1,
+  'pictures/post-slide-2.jpg': postSlide2,
+  'pictures/post-slide-3.jpg': postSlide3,
+  'pictures/post-slide-4.jpg': postSlide4,
+};
+
 export const navs = [
   {
     id: 1,

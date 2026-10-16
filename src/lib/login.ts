@@ -3,8 +3,7 @@ import bcrypt from "bcryptjs"
 import { cookies } from "next/headers"
 import { prisma } from "@/lib/prisma"
 import { SESSION_COOKIE, SESSION_DURATION_MS, encrypt } from "@/lib/session"
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { loginSchema } from "@/lib/schemas"
 
 export type LoginResult =
     | {
@@ -17,22 +16,14 @@ export type LoginResult =
         status: number
     };
 
-function field(body: Record<string, unknown>, name: string) {
-    const value = body[name];
-    return typeof value === "string" ? value.trim() : ""
-}
-
-// shared by the login server action; checks the password against the stored hash
-export async function login(body: Record<string, unknown>): Promise<LoginResult> {
-    const email = field(body, "email").toLowerCase();
-    const password = typeof body.password === "string" ? body.password : "";
-
-    if (!email || !password) {
-        return { ok: false, error: "Email and password are required", status: 400 };
+// shared by the login server action; checks the password against the stored hash.
+// loginSchema (lib/schemas.ts) checks the email and password are there first
+export async function login(body: unknown): Promise<LoginResult> {
+    const parsed = loginSchema.safeParse(body);
+    if (!parsed.success) {
+        return { ok: false, error: parsed.error.issues[0].message, status: 400 };
     }
-    if (!EMAIL_PATTERN.test(email)) {
-        return { ok: false, error: "Enter a valid email address", status: 400 };
-    }
+    const { email, password } = parsed.data;
 
     const user = await prisma.user.findUnique({ where: { email } });
 
