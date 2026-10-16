@@ -1,5 +1,5 @@
 import Image from "next/image"
-import background from "@/pjeg/background.jpeg"
+import background from "@/pictures/background.jpeg"
 
 // full-screen background for the login and signup pages.
 // the SVG filter bends the image with slowly changing noise, which reads as a gentle wave;
