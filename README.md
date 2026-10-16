@@ -177,3 +177,143 @@ So `Hero.tsx` loads `HeroSlider` with `dynamic(..., { ssr: false })`, which mean
 3. button on post so that users can click post and be able to view post.
 4. show the top post in home screen view 
 5. if it is the own is present he should be able to delete post
+#### How the posts list does it
+
+1. **Get posts:** `listPosts()` in `src/lib/posts.ts` reads every post, newest first, with its author, its first picture and how many likes and comments it has. The list shows on the home page under the hero and on `/Posts`.
+2. **Post image:** each card shows the post's first picture at the top. Posts without a picture just show their text.
+3. **Click to view:** the picture and the title both link to the post's own page, `/Posts/<id>`.
+4. **Top posts on the home screen:** the hero at the top of the home page shows the most-liked posts (see **Hero** above).
+5. **Owner can delete:** the Delete button only appears on posts written by the person who is logged in. The server checks again when it's pressed, so changing the page in the browser can't delete someone else's post. Deleting a post also removes its comments, likes and uploaded pictures.
+
+| File | What it holds |
+| --- | --- |
+| `src/components/Posts.tsx` | The grid of post cards. |
+| `src/components/DeletePostButton.tsx` | The Delete button, with an "are you sure?" question. |
+| `src/lib/posts.ts` | Reading, creating and deleting posts, with the owner-only rule. |
+| `src/app/(dashboard)/Posts/page.tsx` | The `/Posts` page. |
+
+### Post page
+
+`/Posts/<id>` shows one post in full:
+
+- The cover picture, the title, the author and the date.
+- The full text, split into paragraphs wherever there's an empty line.
+- Any extra pictures, in a grid under the text.
+- A **Like** button and a **Comments** section (below).
+- A Delete button, for the author only. After deleting, it goes back to `/Posts`.
+
+A post id that doesn't exist shows the "not found" page.
+
+### Likes
+
+- Anyone logged in can like a post by pressing the heart. Pressing it again takes the like back.
+- Each person can like a post only once; the database refuses a second like from the same person.
+- The heart turns red and the count changes straight away, and the server saves it in the background.
+- Logged-out visitors see the count, with a link to log in.
+- Likes decide which posts the hero shows.
+
+### Comments
+
+- Anyone logged in can write a comment under a post. Logged-out visitors see the comments and a link to log in.
+- Only the person who wrote a comment sees a Delete button on it, and the server checks this again.
+- Comments can't be edited yet, only deleted.
+
+| File | What it holds |
+| --- | --- |
+| `src/app/(dashboard)/Posts/[id]/page.tsx` | The post page. |
+| `src/components/LikeButton.tsx` | The heart button. |
+| `src/components/CommentForm.tsx` | The comment box. |
+| `src/components/DeleteCommentButton.tsx` | Delete for your own comments. |
+| `src/lib/likes.ts`, `src/lib/comments.ts` | The rules for likes and comments. |
+| `src/app/actions/posts.ts` | The server actions the buttons and forms call. |
+
+## Create Post Page
+
+`/create_posts` is where logged-in users write a new post. Logged-out visitors are asked to log in.
+
+The page has:
+
+1. **Images:** a drag-and-drop box. Pictures can be dropped on it, or picked by clicking it. Each picture shows a preview with a remove button, and the first one is the post's cover.
+2. **Title:** required, up to 200 characters.
+3. **Description:** the post itself. Leave an empty line between paragraphs. Its first paragraph becomes the short summary shown on cards and in the hero.
+
+Rules for pictures:
+
+- JPG, PNG, WebP or GIF only.
+- Up to 4 pictures, each 4 MB or smaller.
+- The page checks this as soon as a picture is added, and the server checks it again when the post is published.
+
+If something is wrong, an error appears and the title, description and pictures stay as they were. When it works, the new post's page opens.
+
+#### Where uploaded pictures go
+
+Uploaded pictures are saved in the `uploads/` folder at the root of the project, each under a random name, and are shown at `/uploads/<name>`. They are kept out of `public/` because a production server only serves the `public/` files that existed when the site was built, so pictures uploaded later would not show.
+
+- `uploads/` is in `.gitignore`, so pictures people upload aren't committed.
+- Server actions accept 1 MB by default, so `next.config.ts` raises the limit to 20 MB (`serverActions.bodySizeLimit`) to fit 4 pictures of 4 MB.
+
+| File | What it holds |
+| --- | --- |
+| `src/app/(dashboard)/create_posts/page.tsx` | The page, and the "log in first" message. |
+| `src/components/CreatePostForm.tsx` | The form and the drag-and-drop box. |
+| `src/lib/uploads.ts` | Saving and deleting uploaded pictures. |
+| `src/app/uploads/[name]/route.ts` | Sends an uploaded picture to the browser. |
+
+## Validation with Zod
+
+Everything people send is checked with [Zod](https://zod.dev) on the server before it reaches the database. The rules live in one file, `src/lib/schemas.ts`, and also give TypeScript the shape of each kind of data (`SignupInput`, `PostFormInput`, and so on).
+
+| Schema | Checks |
+| --- | --- |
+| `signupSchema` | Name, surname and username are required. The email must be valid and is stored in lower case. The password must be 8–72 characters, and the two passwords must match. |
+| `loginSchema` | A valid email and a password. |
+| `postFormSchema` | The create-post page: a title and a description. |
+| `imageFilesSchema` | Uploaded pictures: type, 4 MB each, at most 4. |
+| `postCreateSchema`, `postUpdateSchema` | Posts made by code. An update must change at least one field, and it never resets fields that weren't sent. |
+| `commentCreateSchema`, `commentUpdateSchema` | Comment text, up to 2,000 characters. |
+| `imageCreateSchema`, `imageUpdateSchema` | Image addresses and their alt text. |
+| `idSchema` | Ids sent from forms and addresses: whole numbers above 0. |
+
+Who owns a post, comment or like is never taken from what the browser sends. It always comes from the logged-in session.
+
+## Navigation
+
+The header shows **Blog Me** and the menu: Home, Posts, Create Posts and User, plus **Log out**. On phones the menu folds into a ☰ button. It is hidden on the login and registration pages. Log out ends both kinds of login (email/password and Google/GitHub) and goes to `/login`.
+
+Files: `src/components/Header.tsx`, `src/components/nav.tsx`, `src/lib/logout.ts`.
+
+## Database models
+
+| Model | What it stores |
+| --- | --- |
+| `User` | Name, surname, username, email and the hashed password. |
+| `Post` | Title, brief, full text and category, plus its author, pictures, comments and likes. |
+| `Image` | A picture's address and alt text, who uploaded it and which post it belongs to. |
+| `Comment` | The text, the post and who wrote it. |
+| `Like` | Which user liked which post (one per user per post). |
+
+The schema is in `src/prisma/schema.prisma`. Prisma looks for `.env` in the folder you run it from, so run Prisma commands from the project root and point them at the config with `--config src/prisma.config.ts`:
+
+```bash
+# after changing schema.prisma: make and apply a migration, then update the client
+npx prisma migrate dev --name <what-changed> --config src/prisma.config.ts
+npx prisma generate --config src/prisma.config.ts
+```
+
+Restart `npm run dev` after a schema change. The running server keeps the old Prisma client until then.
+
+## Useful commands
+
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Starts the site for development. |
+| `npm run seed` | Adds the starter posts from `src/app/data/data.ts` to the database. Posts already there are skipped. |
+| `npm run lint` | Checks the code for mistakes. |
+| `npm run build` | Builds the site for production. |
+
+## Not done yet
+
+- **Google/GitHub users can't post, like or comment.** They aren't saved in the `User` table, so the app doesn't know who they are.
+- **The User page** (`/user`) and editing posts or comments haven't been built.
+- **`src/app/data/post.json` points at pictures in `public/assets/img`,** which no longer exist.
+- **The hero ranks posts by likes.** Homepage point 3 above (posts made that day, by topic) isn't built yet.

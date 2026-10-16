@@ -4,6 +4,10 @@ const nextConfig: NextConfig = {
   /* config options here */
   experimental: {
     agentFeedback: true,
+    serverActions: {
+      // the create-post form sends up to 4 images of 4 MB each (see lib/schemas.ts)
+      bodySizeLimit: "20mb",
+    },
   },
   cacheComponents: true,
   partialPrefetching: true,

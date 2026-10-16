@@ -75,6 +75,24 @@ export const postUpdateSchema = z.object({
     .partial()
     .refine(atLeastOneField, NOTHING_TO_UPDATE);
 
+// what the create-post page sends: a title and the full text are required there;
+// the brief (short summary on cards) is made from the first paragraph of the text
+export const postFormSchema = z.object({
+    title: nonEmpty("Title", 200),
+    content: nonEmpty("Description", 50_000),
+});
+
+// pictures uploaded with a post
+export const MAX_IMAGES = 4;
+export const MAX_IMAGE_MB = 4;
+export const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"] as const;
+
+export const imageFilesSchema = z.array(
+    z.file()
+        .mime([...IMAGE_TYPES], "Images must be JPG, PNG, WebP or GIF")
+        .max(MAX_IMAGE_MB * 1024 * 1024, `Each image must be ${MAX_IMAGE_MB} MB or smaller`),
+).max(MAX_IMAGES, `You can add up to ${MAX_IMAGES} images`);
+
 // ---------- Comments (Commenting system, Comment CRUD) ----------
 
 export const commentCreateSchema = z.object({
@@ -113,6 +131,7 @@ export type SignupInput = z.infer<typeof signupSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type PostCreateInput = z.infer<typeof postCreateSchema>;
 export type PostUpdateInput = z.infer<typeof postUpdateSchema>;
+export type PostFormInput = z.infer<typeof postFormSchema>;
 export type CommentCreateInput = z.infer<typeof commentCreateSchema>;
 export type CommentUpdateInput = z.infer<typeof commentUpdateSchema>;
 export type ImageCreateInput = z.infer<typeof imageCreateSchema>;
