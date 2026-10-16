@@ -7,19 +7,81 @@ datasource db {
   provider = "postgresql"
 }
 
+// A blog post. Only its author may update or delete it (README: Blog CRUD).
 model Post {
-  id        Int      @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   title     String
+  brief     String? // short summary shown on cards and in the hero
   content   String?
-  createdAt DateTime @default(now())
+  category  String?
+  top       Boolean   @default(false) // featured in the "top" list
+  trending  Boolean   @default(false)
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId  Int
+  comments  Comment[]
+  images    Image[]
+  likes     Like[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([authorId])
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   name      String
   surname   String
-  username  String   @unique
-  email     String   @unique
+  username  String    @unique
+  email     String    @unique
   password  String
+  posts     Post[]
+  comments  Comment[]
+  images    Image[]
+  likes     Like[]
+  createdAt DateTime  @default(now())
+}
+
+// A comment on a post. Anyone logged in can read them; only the writer may
+// update or delete their own (README: Commenting system, Comment CRUD).
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    Int
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId  Int
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([postId])
+  @@index([authorId])
+}
+
+// An uploaded image. It belongs to the user who uploaded it and can optionally
+// be attached to one of their posts (README: Image CRUD).
+model Image {
+  id         Int      @id @default(autoincrement())
+  url        String
+  alt        String?
+  uploader   User     @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+  uploaderId Int
+  post       Post?    @relation(fields: [postId], references: [id], onDelete: SetNull)
+  postId     Int?
+  createdAt  DateTime @default(now())
+
+  @@index([uploaderId])
+  @@index([postId])
+}
+
+// A like on a post. Each user can like a post once; the hero shows the most-liked posts.
+model Like {
+  id        Int      @id @default(autoincrement())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])
+  @@index([userId])
 }

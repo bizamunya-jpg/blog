@@ -1,6 +1,6 @@
 "use client"
 
-import { heroSlides } from '@/app/data/data'
+import type { HeroPost } from '@/lib/hero'
 import HeroSlide from '@/components/HeroSlide'
 
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -9,12 +9,12 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 
-// the Swiper carousel itself; Hero loads it in the browser only (see Hero.tsx)
-export default function HeroSlider() {
+// the Swiper carousel itself; HeroCarousel loads it in the browser only
+export default function HeroSlider({ slides }: { slides: HeroPost[] }) {
     return (
         <Swiper
             modules={[A11y, Autoplay, Keyboard, Navigation, Pagination]}
-            loop
+            loop={slides.length > 1}
             speed={600}
             autoplay={{
                 delay: 5000,
@@ -32,7 +32,7 @@ export default function HeroSlider() {
                 ['--swiper-pagination-bullet-inactive-color' as string]: '#ffffff',
             }}
         >
-            {heroSlides.map((slide, index) => (
+            {slides.map((slide, index) => (
                 <SwiperSlide key={slide.id}>
                     <HeroSlide slide={slide} first={index === 0} />
                 </SwiperSlide>
