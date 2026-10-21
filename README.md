@@ -177,6 +177,7 @@ So `Hero.tsx` loads `HeroSlider` with `dynamic(..., { ssr: false })`, which mean
 3. button on post so that users can click post and be able to view post.
 4. show the top post in home screen view 
 5. if it is the own is present he should be able to delete post
+
 #### How the posts list does it
 
 1. **Get posts:** `listPosts()` in `src/lib/posts.ts` reads every post, newest first, with its author, its first picture and how many likes and comments it has. The list shows on the home page under the hero and on `/Posts`.
@@ -282,6 +283,17 @@ The header shows **Blog Me** and the menu: Home, Posts, Create Posts and User, p
 
 Files: `src/components/Header.tsx`, `src/components/nav.tsx`, `src/lib/logout.ts`.
 
+## User page
+
+`/user` is your own page (log in first); `/user/[id]` is anyone's, opened by clicking an author's name on a post or comment. It shows:
+
+- **Details:** name, surname, username and the date they joined. Your email only shows on your own page.
+- **Counts:** posts, followers, following and comments.
+- **Their posts** and **their comments** (each comment links to its post). On your own page you can delete them from here.
+- **Follow button** on other people's pages. It flips straight away like the like button; you can't follow yourself.
+
+Files: `src/app/(dashboard)/user/`, `src/components/UserProfile.tsx`, `src/components/FollowButton.tsx`, `src/lib/profiles.ts`, `src/lib/follows.ts`, `src/app/actions/users.ts`.
+
 ## Database models
 
 | Model | What it stores |
@@ -291,6 +303,7 @@ Files: `src/components/Header.tsx`, `src/components/nav.tsx`, `src/lib/logout.ts
 | `Image` | A picture's address and alt text, who uploaded it and which post it belongs to. |
 | `Comment` | The text, the post and who wrote it. |
 | `Like` | Which user liked which post (one per user per post). |
+| `Follow` | Which user follows which user (one per pair). |
 
 The schema is in `src/prisma/schema.prisma`. Prisma looks for `.env` in the folder you run it from, so run Prisma commands from the project root and point them at the config with `--config src/prisma.config.ts`:
 
@@ -314,6 +327,5 @@ Restart `npm run dev` after a schema change. The running server keeps the old Pr
 ## Not done yet
 
 - **Google/GitHub users can't post, like or comment.** They aren't saved in the `User` table, so the app doesn't know who they are.
-- **The User page** (`/user`) and editing posts or comments haven't been built.
-- **`src/app/data/post.json` points at pictures in `public/assets/img`,** which no longer exist.
+- **Editing posts or comments** hasn't been built.
 - **The hero ranks posts by likes.** Homepage point 3 above (posts made that day, by topic) isn't built yet.
