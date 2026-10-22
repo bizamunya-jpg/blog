@@ -33,10 +33,10 @@ export default function SignupPage() {
         <main className="flex h-dvh overflow-y-auto isolate p-4 sm:p-6">
             <WavyBackground />
 
-            <Card className="m-auto w-full max-w-md bg-transparent">
+            <Card className="m-auto w-full max-w-md ">
                 <CardHeader>
                     <CardTitle>Signup</CardTitle>
-                    <CardDescription>
+                    <CardDescription className="text-color-grey-9000">
                         Create your account NOW
                     </CardDescription>
                 </CardHeader>
@@ -47,7 +47,7 @@ export default function SignupPage() {
                         className="space-y-4"
                     >
 
-                        <div className="space-y-2">
+                        <div className="flex space-y-2 flex-row gap-13">
                             <Label htmlFor="name">
                                 name
                             </Label>
@@ -60,7 +60,7 @@ export default function SignupPage() {
                             />
                         </div>
 
-                        <div className="space-y-2">
+                        <div className="flex flex-row gap-9">
                             <Label htmlFor="surname">
                                 surname
                             </Label>
@@ -73,7 +73,7 @@ export default function SignupPage() {
                             />
                         </div>
 
-                        <div className="space-y-2">
+                        <div className="flex flex-row gap-8">
                             <Label htmlFor="username">
                                 username
                             </Label>
@@ -86,7 +86,7 @@ export default function SignupPage() {
                             />
                         </div>
 
-                        <div className="space-y-2">
+                        <div className="flex flex-row gap-13">
                             <Label htmlFor="email">
                                 email
                             </Label>
@@ -100,7 +100,7 @@ export default function SignupPage() {
                             />
                         </div>
 
-                        <div className="space-y-2">
+                        <div className="flex flex-row gap-8">
                             <Label htmlFor="password">
                                 password
                             </Label>
@@ -113,7 +113,7 @@ export default function SignupPage() {
                             />
                         </div>
 
-                        <div className="space-y-2">
+                        <div className="flex flex-row gap-2">
                             <Label htmlFor="confirm_Password">
                                 confirm password
                             </Label>

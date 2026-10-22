@@ -36,31 +36,7 @@ export const navs = [
     name: 'About',
     link: '/about',
     active: false,
-  },
-  {
-    id: 5,
-    name: 'Contact',
-    link: '/contact',
-    active: false,
-  },
-];
-
-export const scis = [
-  {
-    id: 1,
-    icon: 'bi-facebook',
-    link: '',
-  },
-  {
-    id: 2,
-    icon: 'bi-twitter-x',
-    link: '',
-  },
-  {
-    id: 3,
-    icon: 'bi-instagram',
-    link: '',
-  },
+  }
 ];
 
 export const heroSlides = [

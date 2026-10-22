@@ -42,3 +42,5 @@ next-env.d.ts
 
 # pictures uploaded with posts (see src/lib/uploads.ts)
 /uploads
+
+/src/generated/prisma

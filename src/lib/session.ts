@@ -1,6 +1,7 @@
 import "server-only";
 import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 import { cookies } from "next/headers";
+import { auth } from "@/app/lib/auth";
 
 const secretKey = process.env.SESSION_SECRET;
 if (!secretKey) throw new Error("SESSION_SECRET is not set");
@@ -26,17 +27,20 @@ export async function decrypt(input: string) {
     return payload;
 }
 
-// id of the user logged in with email + password, or null when there is no valid session.
-// Google / GitHub logins go through Auth.js instead and don't set this cookie.
+// id of the logged-in user, or null when there is no valid session.
+// Email + password logins use our own cookie; Google / GitHub logins go through Auth.js,
+// which keeps the database id in its session (see the callbacks in app/lib/auth.ts).
 export async function getCurrentUserId(): Promise<number | null> {
     const token = (await cookies()).get(SESSION_COOKIE)?.value;
-    if (!token) return null;
-
-    try {
-        const { userId } = await decrypt(token);
-        return typeof userId === "number" ? userId : null;
-    } catch {
-        // expired or tampered with
-        return null;
+    if (token) {
+        try {
+            const { userId } = await decrypt(token);
+            if (typeof userId === "number") return userId;
+        } catch {
+            // expired or tampered with: fall through to Auth.js
+        }
     }
+
+    const session = await auth();
+    return session?.dbUserId ?? null;
 }

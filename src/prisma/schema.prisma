@@ -5,6 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  // connection URLs live in prisma.config.ts (Migrate) and lib/prisma.ts (the app) in Prisma 7
 }
 
 // A blog post. Only its author may update or delete it (README: Blog CRUD).
@@ -33,7 +34,8 @@ model User {
   surname   String
   username  String    @unique
   email     String    @unique
-  password  String
+  password  String? // null for people who only ever signed in with Google / GitHub
+  accounts  Account[]
   posts     Post[]
   comments  Comment[]
   images    Image[]
@@ -43,9 +45,23 @@ model User {
   createdAt DateTime  @default(now())
 }
 
+// A Google or GitHub account someone signs in with (lib/oauth-users.ts). One user
+// can have several, e.g. the same email on both Google and GitHub.
+model Account {
+  id                Int      @id @default(autoincrement())
+  provider          String // "google" or "github"
+  providerAccountId String // the id Google / GitHub gives this person; never changes, unlike their email
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            Int
+  createdAt         DateTime @default(now())
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
 // A comment on a post. Anyone logged in can read them; only the writer may
 // update or delete their own (README: Commenting system, Comment CRUD).
-model Comment {
+model Comment { 
   id        Int      @id @default(autoincrement())
   content   String
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
