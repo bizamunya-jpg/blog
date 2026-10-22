@@ -42,3 +42,8 @@ export type Image = Prisma.ImageModel
  * 
  */
 export type Like = Prisma.LikeModel
+/**
+ * Model Follow
+ * 
+ */
+export type Follow = Prisma.FollowModel

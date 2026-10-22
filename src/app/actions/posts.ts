@@ -3,7 +3,7 @@
 import { refresh } from "next/cache"
 import { redirect } from "next/navigation"
 import { getCurrentUserId } from "@/lib/session"
-import { deletePost } from "@/lib/posts"
+import { createPostWithImages, deletePost } from "@/lib/posts"
 import { createComment, deleteComment } from "@/lib/comments"
 import { toggleLike } from "@/lib/likes"
 
@@ -50,4 +50,23 @@ export async function deleteCommentAction(_previous: ActionState, formData: Form
 
     refresh()
     return { error: "" }
+}
+
+export type CreatePostState = {
+    error: string
+    // sent back so the form keeps what was typed when something is wrong
+    fields: { title: string; content: string }
+}
+
+export async function createPostAction(_previous: CreatePostState, formData: FormData): Promise<CreatePostState> {
+    const fields = {
+        title: String(formData.get("title") ?? ""),
+        content: String(formData.get("content") ?? ""),
+    }
+    const images = formData.getAll("images").filter((value) => value instanceof File && value.size > 0)
+
+    const result = await createPostWithImages(await getCurrentUserId(), fields, images)
+    if (!result.ok) return { error: result.error, fields }
+
+    redirect(`/Posts/${result.data.id}`)
 }

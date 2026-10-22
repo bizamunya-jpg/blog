@@ -58,7 +58,7 @@ export default async function Posts() {
 
                             <div className="flex items-end justify-between gap-3 p-5 pt-4">
                                 <div className="space-y-1 text-xs text-muted-foreground">
-                                    <p>by {post.author.username} · {post.createdAt.toLocaleDateString("en-GB")}</p>
+                                    <p>by <Link href={`/user/${post.author.id}`} className="hover:text-foreground hover:underline">{post.author.username}</Link> · {post.createdAt.toLocaleDateString("en-GB")}</p>
                                     <p className="flex items-center gap-3">
                                         <span className="flex items-center gap-1">
                                             <Heart className="size-3.5" aria-hidden="true" />

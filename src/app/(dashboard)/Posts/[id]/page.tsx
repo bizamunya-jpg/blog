@@ -59,7 +59,7 @@ async function PostView({ params }: { params: Promise<{ id: string }> }) {
             )}
             <h1 className="mt-1 text-3xl font-semibold leading-tight">{post.title}</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-                by {post.author.username} · {post.createdAt.toLocaleDateString("en-GB")}
+                by <Link href={`/user/${post.author.id}`} className="hover:text-foreground hover:underline">{post.author.username}</Link> · {post.createdAt.toLocaleDateString("en-GB")}
             </p>
 
             <div className="mt-4 flex items-center gap-3 text-black">
@@ -116,7 +116,9 @@ async function PostView({ params }: { params: Promise<{ id: string }> }) {
                             <li key={comment.id} className="rounded-lg border p-4">
                                 <div className="flex items-start justify-between gap-3">
                                     <p className="text-sm font-medium">
-                                        {comment.author.username}
+                                        <Link href={`/user/${comment.author.id}`} className="hover:underline">
+                                            {comment.author.username}
+                                        </Link>
                                         <span className="ml-2 font-normal text-muted-foreground">
                                             {comment.createdAt.toLocaleDateString("en-GB")}
                                         </span>
