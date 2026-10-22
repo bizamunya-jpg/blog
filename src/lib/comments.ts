@@ -34,6 +34,7 @@ export async function deleteComment(userId: number | null, id: unknown): Promise
     if (!parsedId.success) return { ok: false, error: "Comment not found", status: 404 };
 
     // the authorId condition is what makes this owner-only
+    
     const { count } = await prisma.comment.deleteMany({
         where: { id: parsedId.data, authorId: userId },
     });

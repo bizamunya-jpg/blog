@@ -27,8 +27,9 @@ export async function login(body: unknown): Promise<LoginResult> {
 
     const user = await prisma.user.findUnique({ where: { email } });
 
-    // same message for an unknown email and a wrong password, so nobody can probe which emails exist
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+    // same message for an unknown email and a wrong password, so nobody can probe which emails exist.
+    // users who only signed in with Google / GitHub have no password to compare against
+    if (!user || !user.password || !(await bcrypt.compare(password, user.password))) {
         return { ok: false, error: "Incorrect email or password", status: 401 };
     }
 
