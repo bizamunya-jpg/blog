@@ -248,17 +248,34 @@ If something is wrong, an error appears and the title, description and pictures 
 
 #### Where uploaded pictures go
 
-Uploaded pictures are saved in the `uploads/` folder at the root of the project, each under a random name, and are shown at `/uploads/<name>`. They are kept out of `public/` because a production server only serves the `public/` files that existed when the site was built, so pictures uploaded later would not show.
+Pictures are stored in Supabase Storage, in a public bucket called `post-images`. The server's own disk can't be used: on Vercel it is read-only and wiped between requests, and Vercel also turns away any request bigger than 4.5 MB.
 
-- `uploads/` is in `.gitignore`, so pictures people upload aren't committed.
-- Server actions accept 1 MB by default, so `next.config.ts` raises the limit to 20 MB (`serverActions.bodySizeLimit`) to fit 4 pictures of 4 MB.
+Publishing happens in two steps:
+
+1. The page asks the server for a one-time upload link for each picture (`getUploadLinksAction`). Only logged-in users get links, and each link only works for one random name inside that user's folder (`<user id>/<random id>.jpg`).
+2. The browser uploads each picture straight to Supabase, then publishes the post with the pictures' names. The server checks that each picture really arrived and belongs to that user before saving the post.
+
+The bucket itself also refuses anything that isn't a JPG, PNG, WebP or GIF of 4 MB or less.
+
+To set it up (once):
+
+1. In Supabase, open **Project Settings → API** and copy the project URL and the `service_role` (secret) key.
+2. Add them to `.env`, and to the project's **Environment Variables** on Vercel:
+
+   ```bash
+   SUPABASE_URL=https://<project>.supabase.co
+   SUPABASE_SERVICE_ROLE_KEY=<secret key>
+   ```
+
+   The secret key can do anything in your Supabase project. It is only used on the server, so never give it a `NEXT_PUBLIC_` name.
+3. Run `npm run storage:setup` to create the bucket.
 
 | File | What it holds |
 | --- | --- |
 | `src/app/(dashboard)/create_posts/page.tsx` | The page, and the "log in first" message. |
 | `src/components/CreatePostForm.tsx` | The form and the drag-and-drop box. |
-| `src/lib/uploads.ts` | Saving and deleting uploaded pictures. |
-| `src/app/uploads/[name]/route.ts` | Sends an uploaded picture to the browser. |
+| `src/lib/uploads.ts` | Upload links, checking and deleting uploaded pictures in Supabase Storage. |
+| `src/prisma/setup-storage.ts` | Creates the `post-images` bucket (`npm run storage:setup`). |
 
 ## Validation with Zod
 
@@ -269,7 +286,7 @@ Everything people send is checked with [Zod](https://zod.dev) on the server befo
 | `signupSchema` | Name, surname and username are required. The email must be valid and is stored in lower case. The password must be 8–72 characters, and the two passwords must match. |
 | `loginSchema` | A valid email and a password. |
 | `postFormSchema` | The create-post page: a title and a description. |
-| `imageFilesSchema` | Uploaded pictures: type, 4 MB each, at most 4. |
+| `uploadRequestSchema` | Pictures about to be uploaded: type, 4 MB each, at most 4. |
 | `postCreateSchema`, `postUpdateSchema` | Posts made by code. An update must change at least one field, and it never resets fields that weren't sent. |
 | `commentCreateSchema`, `commentUpdateSchema` | Comment text, up to 2,000 characters. |
 | `imageCreateSchema`, `imageUpdateSchema` | Image addresses and their alt text. |
@@ -321,6 +338,7 @@ Restart `npm run dev` after a schema change. The running server keeps the old Pr
 | --- | --- |
 | `npm run dev` | Starts the site for development. |
 | `npm run seed` | Adds the starter posts from `src/app/data/data.ts` to the database. Posts already there are skipped. |
+| `npm run storage:setup` | Creates (or updates) the Supabase Storage bucket for post pictures. |
 | `npm run lint` | Checks the code for mistakes. |
 | `npm run build` | Builds the site for production. |
 

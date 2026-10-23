@@ -87,11 +87,15 @@ export const MAX_IMAGES = 4;
 export const MAX_IMAGE_MB = 4;
 export const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"] as const;
 
-export const imageFilesSchema = z.array(
-    z.file()
-        .mime([...IMAGE_TYPES], "Images must be JPG, PNG, WebP or GIF")
-        .max(MAX_IMAGE_MB * 1024 * 1024, `Each image must be ${MAX_IMAGE_MB} MB or smaller`),
-).max(MAX_IMAGES, `You can add up to ${MAX_IMAGES} images`);
+// what the browser says about each picture before uploading it to Supabase (lib/uploads.ts).
+// The bucket itself also refuses other types and bigger files, so this can't be talked around
+export const uploadRequestSchema = z.array(z.object({
+    type: z.enum(IMAGE_TYPES, "Images must be JPG, PNG, WebP or GIF"),
+    size: z.number().int().positive().max(MAX_IMAGE_MB * 1024 * 1024, `Each image must be ${MAX_IMAGE_MB} MB or smaller`),
+})).max(MAX_IMAGES, `You can add up to ${MAX_IMAGES} images`);
+
+// the uploaded pictures sent with a new post: their names in the bucket
+export const uploadedPathsSchema = z.array(z.string()).max(MAX_IMAGES, `You can add up to ${MAX_IMAGES} images`);
 
 // ---------- Comments (Commenting system, Comment CRUD) ----------
 

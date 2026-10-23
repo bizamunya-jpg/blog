@@ -4,10 +4,12 @@ const nextConfig: NextConfig = {
   /* config options here */
   experimental: {
     agentFeedback: true,
-    serverActions: {
-      // the create-post form sends up to 4 images of 4 MB each (see lib/schemas.ts)
-      bodySizeLimit: "20mb",
-    },
+  },
+  images: {
+    // pictures uploaded with posts live in Supabase Storage (see src/lib/uploads.ts)
+    remotePatterns: [
+      { protocol: "https", hostname: "*.supabase.co", pathname: "/storage/v1/object/public/post-images/**" },
+    ],
   },
   cacheComponents: true,
   partialPrefetching: true,

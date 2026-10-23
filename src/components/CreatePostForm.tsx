@@ -5,7 +5,7 @@ import { ImagePlus, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { createPostAction, type CreatePostState } from "@/app/actions/posts"
+import { createPostAction, getUploadLinksAction, type CreatePostState } from "@/app/actions/posts"
 import { IMAGE_TYPES, MAX_IMAGES, MAX_IMAGE_MB } from "@/lib/schemas"
 
 type Picked = { file: File; preview: string }
@@ -19,6 +19,7 @@ export default function CreatePostForm() {
     const [pictures, setPictures] = useState<Picked[]>([])
     const [pictureError, setPictureError] = useState("")
     const [dragging, setDragging] = useState(false)
+    const [uploading, setUploading] = useState(false)
 
     // previews are temporary browser addresses; free them when the page closes
     const picturesRef = useRef(pictures)
@@ -58,12 +59,45 @@ export default function CreatePostForm() {
         setPictureError("")
     }
 
+    // sends each picture straight to Supabase Storage with a one-time link from the server,
+    // so big pictures never go through our server (see lib/uploads.ts); returns their names
+    async function uploadPictures(): Promise<string[] | null> {
+        const { error, links } = await getUploadLinksAction(
+            pictures.map(({ file }) => ({ type: file.type, size: file.size })),
+        )
+        if (error) {
+            setPictureError(error)
+            return null
+        }
+
+        const responses = await Promise.all(links.map((link, index) => {
+            const { file } = pictures[index]
+            return fetch(link.signedUrl, {
+                method: "PUT",
+                body: file,
+                headers: { "content-type": file.type, "x-upsert": "false" },
+            }).catch(() => null)
+        }))
+        if (responses.some((response) => !response?.ok)) {
+            setPictureError("A picture didn't upload. Check your connection and try again")
+            return null
+        }
+        return links.map((link) => link.path)
+    }
+
     // sent by hand rather than with a plain form action, so the form isn't
     // cleared when something is wrong and people keep their text and pictures
-    function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault()
         const formData = new FormData(event.currentTarget)
-        pictures.forEach((p) => formData.append("images", p.file))
+        setPictureError("")
+
+        setUploading(true)
+        const paths = pictures.length > 0 ? await uploadPictures() : []
+        setUploading(false)
+        if (!paths) return
+
+        paths.forEach((path) => formData.append("images", path))
         startTransition(() => formAction(formData))
     }
 
@@ -149,8 +183,8 @@ export default function CreatePostForm() {
                 </p>
             )}
 
-            <Button type="submit" disabled={pending} className="w-full sm:w-auto">
-                {pending ? "Publishing..." : "Publish post"}
+            <Button type="submit" disabled={uploading || pending} className="w-full sm:w-auto">
+                {uploading ? "Uploading pictures..." : pending ? "Publishing..." : "Publish post"}
             </Button>
         </form>
     )
