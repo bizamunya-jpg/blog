@@ -1,7 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { idSchema, imageFilesSchema, postCreateSchema, postFormSchema } from "@/lib/schemas";
-import { deleteUpload, saveUpload } from "@/lib/uploads";
+import { idSchema, postCreateSchema, postFormSchema, uploadedPathsSchema } from "@/lib/schemas";
+import { deleteUploads, isOwnUpload, uploadUrl } from "@/lib/uploads";
 
 // Post rules (README: Blog CRUD):
 // - any logged-in user can create a post; it is saved as theirs
@@ -78,7 +78,7 @@ export async function deletePost(userId: number | null, id: unknown): Promise<Re
     });
     if (count === 1) {
         await prisma.image.deleteMany({ where: { id: { in: images.map((image) => image.id) } } });
-        await Promise.all(images.map((image) => deleteUpload(image.url)));
+        await deleteUploads(images.map((image) => image.url));
         return { ok: true, data: { id: parsedId.data } };
     }
 
@@ -94,24 +94,29 @@ function makeBrief(content: string) {
     return first.length > 200 ? `${first.slice(0, 197).trimEnd()}...` : first;
 }
 
-// used by the create-post page: title, description and up to MAX_IMAGES pictures
-export async function createPostWithImages(userId: number | null, input: unknown, files: unknown) {
+// used by the create-post page: title, description and up to MAX_IMAGES pictures.
+// The pictures are already in Supabase Storage (uploaded by the browser); `paths` are their names
+export async function createPostWithImages(userId: number | null, input: unknown, paths: unknown) {
     if (userId === null) return NOT_LOGGED_IN;
 
     const fields = postFormSchema.safeParse(input);
     if (!fields.success) {
         return { ok: false, error: fields.error.issues[0].message, status: 400 } as const;
     }
-    const images = imageFilesSchema.safeParse(files);
+    const images = uploadedPathsSchema.safeParse(paths);
     if (!images.success) {
         return { ok: false, error: images.error.issues[0].message, status: 400 } as const;
     }
 
-    const { title, content } = fields.data;
-    const urls: string[] = [];
-    try {
-        for (const file of images.data) urls.push(await saveUpload(file));
+    // only pictures this user uploaded themselves, so nobody can attach someone else's
+    const owned = await Promise.all(images.data.map((path) => isOwnUpload(userId, path)));
+    if (owned.includes(false)) {
+        return { ok: false, error: "A picture didn't finish uploading, please try again", status: 400 } as const;
+    }
 
+    const { title, content } = fields.data;
+    const urls = images.data.map(uploadUrl);
+    try {
         const post = await prisma.post.create({
             data: {
                 title,
@@ -124,7 +129,7 @@ export async function createPostWithImages(userId: number | null, input: unknown
         return { ok: true, data: post } as const;
     } catch (error) {
         // don't leave pictures behind for a post that was never saved
-        await Promise.all(urls.map(deleteUpload));
+        await deleteUploads(urls);
         throw error;
     }
 }

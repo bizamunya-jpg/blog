@@ -6,6 +6,7 @@ import { getCurrentUserId } from "@/lib/session"
 import { createPostWithImages, deletePost } from "@/lib/posts"
 import { createComment, deleteComment } from "@/lib/comments"
 import { toggleLike } from "@/lib/likes"
+import { createUploadLinks, type UploadLink } from "@/lib/uploads"
 
 export type ActionState = { error: string }
 
@@ -52,6 +53,15 @@ export async function deleteCommentAction(_previous: ActionState, formData: Form
     return { error: "" }
 }
 
+// step one of publishing: one-time links the browser uploads each picture to
+export async function getUploadLinksAction(
+    files: { type: string; size: number }[],
+): Promise<{ error: string; links: UploadLink[] }> {
+    const result = await createUploadLinks(await getCurrentUserId(), files)
+    if (!result.ok) return { error: result.error, links: [] }
+    return { error: "", links: result.data }
+}
+
 export type CreatePostState = {
     error: string
     // sent back so the form keeps what was typed when something is wrong
@@ -63,7 +73,8 @@ export async function createPostAction(_previous: CreatePostState, formData: For
         title: String(formData.get("title") ?? ""),
         content: String(formData.get("content") ?? ""),
     }
-    const images = formData.getAll("images").filter((value) => value instanceof File && value.size > 0)
+    // names of the pictures the browser already uploaded with getUploadLinksAction
+    const images = formData.getAll("images")
 
     const result = await createPostWithImages(await getCurrentUserId(), fields, images)
     if (!result.ok) return { error: result.error, fields }
