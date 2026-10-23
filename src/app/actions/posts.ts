@@ -1,6 +1,6 @@
 "use server"
 
-import { refresh } from "next/cache"
+import { refresh, revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { getCurrentUserId } from "@/lib/session"
 import { createPostWithImages, deletePost } from "@/lib/posts"
@@ -68,5 +68,8 @@ export async function createPostAction(_previous: CreatePostState, formData: For
     const result = await createPostWithImages(await getCurrentUserId(), fields, images)
     if (!result.ok) return { error: result.error, fields }
 
+    // the new post shows on Posts, Home and the User page; without this the browser keeps
+    // showing the copies it already had from before the post existed
+    revalidatePath("/", "layout")
     redirect(`/Posts/${result.data.id}`)
 }

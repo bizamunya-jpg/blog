@@ -46,7 +46,8 @@ const navigation = [
 ]
 
 // the nav is for people who are using the blog, so it is hidden on these pages
-const AUTH_PAGES = ["/login", "/registration"]
+// ("/" is the welcome page with the sign up / log in choice)
+const AUTH_PAGES = ["/", "/login", "/registration"]
 
 export default function Nav() {
     const pathname = usePathname()

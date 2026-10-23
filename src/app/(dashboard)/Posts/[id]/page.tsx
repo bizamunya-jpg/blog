@@ -5,9 +5,11 @@ import { notFound } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
 import { getPost } from "@/lib/posts"
 import { hasLiked } from "@/lib/likes"
+import { isFollowing } from "@/lib/follows"
 import { getCurrentUserId } from "@/lib/session"
 import { resolvePicture } from "@/lib/pictures"
 import LikeButton from "@/components/LikeButton"
+import FollowButton from "@/components/FollowButton"
 import CommentForm from "@/components/CommentForm"
 import DeleteCommentButton from "@/components/DeleteCommentButton"
 import DeletePostButton from "@/components/DeletePostButton"
@@ -34,7 +36,11 @@ async function PostView({ params }: { params: Promise<{ id: string }> }) {
     const post = await getPost(id)
     if (!post) notFound()
 
-    const liked = await hasLiked(currentUserId, post.id)
+    const isOwnPost = post.authorId === currentUserId
+    const [liked, followingAuthor] = await Promise.all([
+        hasLiked(currentUserId, post.id),
+        isOwnPost ? false : isFollowing(currentUserId, post.author.id),
+    ])
     const [cover, ...otherPictures] = post.images
     const paragraphs = (post.content ?? post.brief ?? "").split(/\n\s*\n/).filter(Boolean)
 
@@ -58,9 +64,18 @@ async function PostView({ params }: { params: Promise<{ id: string }> }) {
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{post.category}</span>
             )}
             <h1 className="mt-1 text-3xl font-semibold leading-tight">{post.title}</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-                by <Link href={`/user/${post.author.id}`} className="hover:text-foreground hover:underline">{post.author.username}</Link> · {post.createdAt.toLocaleDateString("en-GB")}
-            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+                <p className="text-sm text-muted-foreground">
+                    by <Link href={`/user/${post.author.id}`} className="hover:text-foreground hover:underline">{post.author.username}</Link> · {post.createdAt.toLocaleDateString("en-GB")}
+                </p>
+                {!isOwnPost && (
+                    <FollowButton
+                        userId={post.author.id}
+                        following={followingAuthor}
+                        loggedIn={currentUserId !== null}
+                    />
+                )}
+            </div>
 
             <div className="mt-4 flex items-center gap-3 text-black">
                 <LikeButton
@@ -69,7 +84,7 @@ async function PostView({ params }: { params: Promise<{ id: string }> }) {
                     count={post._count.likes}
                     loggedIn={currentUserId !== null}
                 />
-                {post.authorId === currentUserId && (
+                {isOwnPost && (
                     <DeletePostButton 
                     postId={post.id} 
                     title={post.title} 
